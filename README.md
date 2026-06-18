@@ -6,7 +6,7 @@ A team challenge for the CESCP Embedded Systems Cybersecurity Bootcamp.
 
 You and your team defend one embedded device across all four days of the bootcamp. Make the right security call, seal the node, and earn points. The team with the most points across all four days wins.
 
-**Play here:** [Open the game](https://myramade.github.io/cescp_arena/)
+**Play here:** [Open the game](https://myramade.github.io/cescp-arena/)
 
 ## What you need
 
