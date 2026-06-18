@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operation Hardened Node - CESCP Bootcamp Arena</title>
+<style>
+  :root{
+    --bg:#20282C; --panel:#0D1117; --panel2:#161D22; --slate:#2A3439;
+    --cyan:#1CADE4; --blue:#0070C0; --green:#3B8850; --red:#B23A3A;
+    --gold:#C68A2E; --muted:#969FA7; --ice:#E6EDF3; --border:#30363D;
+    --sealed:#3FB950;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      linear-gradient(0deg, rgba(28,173,228,0.04) 1px, transparent 1px) 0 0 / 100% 34px,
+      linear-gradient(90deg, rgba(28,173,228,0.04) 1px, transparent 1px) 0 0 / 34px 100%,
+      var(--bg);
+    color:var(--ice); font-family:Arial, Helvetica, sans-serif; line-height:1.5; min-height:100vh; padding-bottom:40px;
+  }
+  .mono{font-family:"Courier New", monospace;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px;}
+
+  /* top bar */
+  .topbar{border-bottom:1px solid var(--border);background:rgba(13,17,23,0.9);position:sticky;top:0;z-index:20;}
+  .topbar .row{display:flex;align-items:center;gap:16px;padding:11px 20px;flex-wrap:wrap;}
+  .rule3{display:flex;height:5px;width:150px;border-radius:3px;overflow:hidden;flex:none;}
+  .rule3 i{flex:1;} .rule3 .s{background:var(--slate);} .rule3 .c{background:var(--cyan);} .rule3 .g{background:var(--muted);}
+  .brand{display:flex;flex-direction:column;line-height:1.1;}
+  .brand .eyebrow{color:var(--cyan);font-size:11px;letter-spacing:2px;font-weight:bold;}
+  .brand .name{font-size:15px;font-weight:bold;}
+  .topstats{margin-left:auto;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+  .tteam{font-weight:bold;color:var(--ice);font-size:14px;border:1px solid var(--border);border-radius:20px;padding:4px 12px;}
+  .stat{text-align:center;} .stat .num{font-size:20px;font-weight:bold;color:var(--cyan);} .stat .lab{font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
+  .stat.score .num{color:var(--sealed);}
+
+  /* screens */
+  .screen{display:none;} .screen.active{display:block;animation:fade .35s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  /* shared */
+  .kick{color:var(--cyan);letter-spacing:3px;font-size:12px;font-weight:bold;}
+  h1.big{font-size:46px;margin:10px 0 6px;line-height:1.05;}
+  h1.big .sub{display:block;color:var(--muted);font-weight:bold;font-size:19px;margin-top:8px;}
+  .lede{font-size:18px;max-width:760px;margin:16px 0;}
+  .btn{font-family:inherit;font-size:16px;font-weight:bold;cursor:pointer;border:none;border-radius:8px;padding:14px 26px;transition:transform .12s ease, filter .12s ease;}
+  .btn:focus-visible{outline:3px solid var(--cyan);outline-offset:2px;}
+  .btn.primary{background:var(--cyan);color:#04121a;} .btn.primary:hover{filter:brightness(1.08);transform:translateY(-1px);}
+  .btn.ghost{background:transparent;color:var(--ice);border:1px solid var(--border);} .btn.ghost:hover{border-color:var(--cyan);color:var(--cyan);}
+  .btn.lg{font-size:18px;padding:18px 30px;}
+  .btn[disabled]{opacity:.4;cursor:not-allowed;}
+
+  /* landing */
+  .paths{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:26px 0;}
+  .path{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:24px;display:flex;flex-direction:column;}
+  .path h3{margin:0 0 6px;font-size:21px;}
+  .path p{font-size:15px;color:var(--ice);margin:0 0 18px;flex:1;}
+  .path .who{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+  .note{font-size:13px;color:var(--muted);max-width:760px;}
+
+  /* lobby */
+  .lobby{max-width:620px;margin:0 auto;padding-top:30px;}
+  .field{margin:18px 0;}
+  .field label{display:block;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+  .field input[type=text]{width:100%;font-family:inherit;font-size:20px;font-weight:bold;color:var(--ice);background:var(--panel);
+       border:1px solid var(--border);border-radius:9px;padding:14px 16px;}
+  .field input[type=text]:focus{outline:none;border-color:var(--cyan);}
+  .chooser{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+  .chooser button{font-family:inherit;cursor:pointer;background:var(--panel);border:1px solid var(--border);border-radius:9px;
+       padding:14px 8px;color:var(--ice);text-align:center;transition:border-color .12s ease, background .12s ease;}
+  .chooser button .d{font-size:12px;letter-spacing:1px;color:var(--cyan);font-weight:bold;}
+  .chooser button .t{font-size:12px;color:var(--muted);margin-top:3px;display:block;line-height:1.2;}
+  .chooser button.on{border-color:var(--cyan);background:var(--slate);}
+  .chooser button.all{grid-column:1 / -1;}
+  .chooser button.all .t{color:var(--ice);}
+
+  /* play layout */
+  .playgrid{display:grid;grid-template-columns:300px 1fr;gap:22px;padding-top:22px;align-items:start;}
+  .console{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;position:sticky;top:80px;}
+  .console h3{margin:0 0 4px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+  .nodewrap{display:flex;justify-content:center;padding:4px 0 2px;}
+  svg.node{width:250px;height:250px;max-width:100%;}
+  .status-line{text-align:center;font-size:12px;color:var(--muted);margin:2px 0 12px;} .status-line b{color:var(--sealed);}
+  .dayrow{display:flex;align-items:center;gap:8px;margin:9px 0;font-size:12px;}
+  .dayrow .dn{flex:1;color:var(--ice);} .dayrow .dn small{color:var(--muted);display:block;font-size:10px;}
+  .dayrow .cnt{font-family:"Courier New",monospace;color:var(--muted);}
+  .dbar{height:6px;background:var(--slate);border-radius:4px;overflow:hidden;width:74px;flex:none;border:1px solid var(--border);}
+  .dbar>span{display:block;height:100%;width:0;transition:width .4s ease;}
+
+  /* mission */
+  .mission{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:24px 28px;}
+  .mhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px;}
+  .mhead .mno{font-family:"Courier New",monospace;color:var(--cyan);font-weight:bold;font-size:13px;}
+  .mhead .mod{font-size:11px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;}
+  .timer{margin-left:auto;display:flex;align-items:center;gap:8px;}
+  .timer .tnum{font-family:"Courier New",monospace;font-size:13px;color:var(--muted);min-width:46px;text-align:right;}
+  .tbar{width:120px;height:6px;background:var(--slate);border-radius:4px;overflow:hidden;border:1px solid var(--border);}
+  .tbar>span{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--cyan),var(--blue));transition:width .25s linear;}
+  .mission h2{margin:2px 0 14px;font-size:29px;}
+  .scenario{background:var(--panel2);border-left:3px solid var(--cyan);border-radius:0 8px 8px 0;padding:14px 18px;font-size:16px;margin-bottom:16px;}
+  .qline{font-size:18px;font-weight:bold;margin:6px 0 14px;}
+  .opts{display:flex;flex-direction:column;gap:11px;}
+  .opt{display:flex;align-items:flex-start;gap:12px;text-align:left;background:var(--panel2);border:1px solid var(--border);border-radius:9px;
+       padding:14px 16px;cursor:pointer;font-family:inherit;color:var(--ice);font-size:16px;transition:border-color .12s ease, background .12s ease;width:100%;}
+  .opt:hover{border-color:var(--cyan);} .opt:focus-visible{outline:3px solid var(--cyan);outline-offset:2px;}
+  .opt .key{font-family:"Courier New",monospace;font-weight:bold;color:var(--cyan);flex:none;width:18px;}
+  .opt.correct{border-color:var(--sealed);background:rgba(63,185,80,0.12);} .opt.correct .key{color:var(--sealed);}
+  .opt.wrong{border-color:var(--red);background:rgba(178,58,58,0.12);} .opt.wrong .key{color:var(--red);}
+  .opt[disabled]{cursor:default;}
+  .reveal{margin-top:16px;border-radius:10px;padding:0 18px;max-height:0;overflow:hidden;border:1px solid transparent;transition:max-height .45s ease, padding .3s ease;}
+  .reveal.show{max-height:680px;padding:16px 18px;}
+  .reveal.good{background:rgba(63,185,80,0.08);border-color:var(--green);}
+  .reveal.bad{background:rgba(178,58,58,0.08);border-color:var(--red);}
+  .reveal .verdict{font-weight:bold;font-size:14px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+  .reveal.good .verdict{color:var(--sealed);} .reveal.bad .verdict{color:var(--red);}
+  .reveal p{margin:8px 0;font-size:15px;}
+  .reveal .nextrow{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;}
+  .reveal .pts{font-family:"Courier New",monospace;font-weight:bold;color:var(--sealed);font-size:14px;}
+
+  /* results */
+  .results{text-align:center;padding:34px 0;}
+  .results .seal{font-size:13px;letter-spacing:4px;color:var(--sealed);font-weight:bold;}
+  .results h1{font-size:42px;margin:10px 0 4px;}
+  .results .team{color:var(--cyan);font-weight:bold;}
+  .scorebig{font-size:74px;font-weight:bold;color:var(--cyan);font-family:"Courier New",monospace;margin:4px 0;line-height:1;}
+  .subscores{display:flex;justify-content:center;gap:34px;flex-wrap:wrap;margin:14px 0 8px;}
+  .subscores .b{text-align:center;} .subscores .b .n{font-size:26px;font-weight:bold;} .subscores .b .l{font-size:10px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
+  .report{background:var(--panel);border:1px solid var(--cyan);border-radius:12px;padding:18px 22px;max-width:560px;margin:18px auto;}
+  .report .big{font-size:15px;} .report .big b{color:var(--cyan);}
+  .recap{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;max-width:880px;margin:22px auto;text-align:left;}
+  .recap .item{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--sealed);border-radius:0 8px 8px 0;padding:10px 14px;}
+  .recap .item b{color:var(--cyan);display:block;font-size:13px;} .recap .item span{font-size:13px;}
+  .recap .item.missed{border-left-color:var(--red);} .recap .item.missed b{color:var(--red);}
+
+  /* host scoreboard */
+  .host{max-width:760px;margin:0 auto;padding-top:26px;}
+  .host h1{font-size:36px;margin:0 0 4px;}
+  .addbar{display:flex;gap:10px;margin:18px 0;flex-wrap:wrap;}
+  .addbar input{font-family:inherit;font-size:16px;color:var(--ice);background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 14px;}
+  .addbar input.nm{flex:1;min-width:160px;} .addbar input.pts{width:120px;}
+  .addbar input:focus{outline:none;border-color:var(--cyan);}
+  .board{list-style:none;margin:14px 0;padding:0;}
+  .board li{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:13px 16px;margin-bottom:9px;}
+  .board li .rank{font-family:"Courier New",monospace;font-size:22px;font-weight:bold;color:var(--muted);width:34px;text-align:center;}
+  .board li .tn{flex:1;font-weight:bold;font-size:17px;}
+  .board li .ps{font-family:"Courier New",monospace;font-size:22px;font-weight:bold;color:var(--cyan);}
+  .board li .x{background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 6px;}
+  .board li .x:hover{color:var(--red);}
+  .board li.p1{border-color:var(--gold);} .board li.p1 .rank{color:var(--gold);}
+  .board li.p2{border-color:var(--muted);} .board li.p3{border-color:var(--gold);opacity:.92;}
+  .empty{color:var(--muted);text-align:center;padding:24px;border:1px dashed var(--border);border-radius:10px;}
+
+  .backlink{display:inline-block;margin-top:18px;color:var(--muted);font-size:13px;text-decoration:none;border-bottom:1px dotted var(--muted);cursor:pointer;}
+  .backlink:hover{color:var(--cyan);border-color:var(--cyan);}
+  .foot{text-align:center;color:var(--muted);font-size:12px;margin-top:30px;}
+
+  /* campaign hub */
+  .hubwrap{max-width:780px;margin:0 auto;padding-top:26px;}
+  .hubtop{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin:14px 0 18px;}
+  .hubtop .tn{font-size:20px;font-weight:bold;} .hubtop .tn small{display:block;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:normal;}
+  .hubtop .tot{text-align:right;}
+  .hubtop .tot .n{font-family:"Courier New",monospace;font-size:36px;font-weight:bold;color:var(--cyan);line-height:1;}
+  .hubtop .tot .l{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+  .daycards{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .daycard{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;}
+  .daycard.done{border-left-color:var(--sealed);}
+  .daycard .dtop{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+  .daycard .dname{font-weight:bold;font-size:17px;} .daycard .dname small{display:block;color:var(--muted);font-size:12px;font-weight:normal;}
+  .daycard .dstat{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+  .daycard.done .dstat.ok{color:var(--sealed);}
+  .daycard .dscore{font-family:"Courier New",monospace;font-size:26px;font-weight:bold;color:var(--cyan);}
+  .daycard .dscore .pend{color:var(--muted);font-size:15px;}
+  .daycard .drow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px;}
+  .daycard .btn{padding:9px 16px;font-size:14px;}
+  .hubdone{background:rgba(63,185,80,0.08);border:1px solid var(--green);border-radius:12px;padding:18px 22px;margin:18px 0 0;text-align:center;}
+  .hubdone .v{color:var(--sealed);font-weight:bold;letter-spacing:2px;text-transform:uppercase;font-size:13px;}
+  .hubdone h3{margin:7px 0;font-size:22px;} .hubdone p{margin:6px 0;font-size:15px;}
+
+  /* per-day chips on results */
+  .daychips{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:16px 0;}
+  .daychip{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:9px 16px;min-width:92px;text-align:center;}
+  .daychip.done{border-color:var(--sealed);}
+  .daychip .l{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+  .daychip .n{font-family:"Courier New",monospace;font-size:19px;font-weight:bold;color:var(--cyan);}
+  .daychip.pending .n{color:var(--muted);}
+
+  /* host per-day board */
+  .livebadge{font-family:"Courier New",monospace;font-size:12px;font-weight:bold;letter-spacing:1px;padding:3px 10px;border-radius:20px;vertical-align:middle;border:1px solid var(--border);color:var(--muted);}
+  .livebadge.on{color:var(--sealed);border-color:var(--sealed);background:rgba(63,185,80,0.12);}
+  .livebadge.warn{color:var(--gold);border-color:var(--gold);background:rgba(198,138,46,0.12);}
+  .setupbox{background:rgba(198,138,46,0.08);border:1px solid var(--gold);border-radius:10px;padding:14px 18px;margin:14px 0;font-size:14px;line-height:1.6;}
+  .setupbox b{color:var(--gold);}
+  .daysel{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .daysel button{background:transparent;color:var(--muted);border:none;font-family:inherit;font-weight:bold;padding:12px 14px;cursor:pointer;font-size:14px;}
+  .daysel button.on{background:var(--slate);color:var(--cyan);}
+  .board li .days{display:flex;gap:6px;}
+  .board li .dcell{font-family:"Courier New",monospace;font-size:12px;color:var(--muted);background:var(--panel2);border:1px solid var(--border);border-radius:5px;padding:3px 0;width:40px;text-align:center;}
+  .board li .dcell.has{color:var(--ice);border-color:var(--cyan);}
+  .board li .ps{width:62px;text-align:right;}
+  .board li.bhead{background:transparent;border:none;padding:2px 16px;color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;}
+  .board li.bhead .dcell,.board li.bhead .ps{background:transparent;border:none;color:var(--muted);}
+
+  @media (max-width:880px){
+    .playgrid{grid-template-columns:1fr;} .console{position:static;}
+    .paths,.recap{grid-template-columns:1fr;}
+    .chooser{grid-template-columns:repeat(2,1fr);}
+    h1.big{font-size:32px;} .mission h2{font-size:23px;} .scorebig{font-size:54px;}
+  }
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;animation:none !important;} }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="row">
+    <div class="rule3"><i class="s"></i><i class="c"></i><i class="g"></i></div>
+    <div class="brand"><span class="eyebrow">CESCP BOOTCAMP ARENA</span><span class="name">Operation Hardened Node</span></div>
+    <div class="topstats" id="topstats" style="display:none;">
+      <span class="tteam" id="tTeam">Team</span>
+      <div class="stat"><div class="num" id="tMission">0/0</div><div class="lab">Mission</div></div>
+      <div class="stat score"><div class="num" id="tScore">0</div><div class="lab">Score</div></div>
+      <div class="stat"><div class="num" id="tStreak">0</div><div class="lab">Streak</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ============ LANDING ============ -->
+  <section class="screen active" id="landing">
+    <div style="padding:42px 0 4px;">
+      <div class="kick">FOUR DAYS, ONE NODE, EVERY TEAM</div>
+      <h1 class="big">Operation Hardened Node
+        <span class="sub">A four-day review arena. Each team plays. The best-hardened node wins.</span></h1>
+      <p class="lede">Every team jumps on their own device and picks a name. Then they complete each day's challenge,
+      Day 1 through Day 4. The points from every day are tracked together into one team total, and the host board
+      ranks every team by that total.</p>
+
+      <div class="paths">
+        <div class="path">
+          <div class="who">For each team</div>
+          <h3>Play as a team</h3>
+          <p>Open on your laptop, pick your team name, and work through the four day challenges at your own pace.
+          The node teaches you as you go, and your day scores keep adding up into one running total.</p>
+          <button class="btn primary lg" onclick="goLobby()">Play as a team</button>
+        </div>
+        <div class="path">
+          <div class="who">For the instructor</div>
+          <h3>Host scoreboard</h3>
+          <p>Project this on the room screen. As each team finishes and calls out a score, type it in.
+          The board ranks every team live, with a podium for the top three.</p>
+          <button class="btn ghost lg" onclick="showScreen('host'); renderHost();">Open host scoreboard</button>
+        </div>
+      </div>
+      <p class="note">Heads up: this version runs fully offline on each device, with no shared server, so the host
+      board is where the scores come together. That keeps it reliable in any classroom with no setup.</p>
+    </div>
+  </section>
+
+  <!-- ============ LOBBY ============ -->
+  <section class="screen" id="lobby">
+    <div class="lobby">
+      <div class="kick">TEAM CHECK-IN</div>
+      <h1 class="big" style="font-size:36px;">Name your team.</h1>
+      <p class="lede" style="font-size:16px;">You will work through all four day challenges. Your points from each
+      day are tracked together into one team total.</p>
+      <div class="field">
+        <label for="teamInput">Team name</label>
+        <input type="text" id="teamInput" maxlength="28" placeholder="Type your team name" autocomplete="off">
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;margin-top:8px;flex-wrap:wrap;">
+        <button class="btn primary lg" onclick="continueToHub()">Continue to your days</button>
+        <span class="backlink" onclick="showScreen('landing')">Back</span>
+      </div>
+      <p class="note" style="margin-top:18px;">Use the same team name and the same device each time, so your day
+      scores keep adding up.</p>
+    </div>
+  </section>
+
+  <!-- ============ HUB ============ -->
+  <section class="screen" id="hub">
+    <div class="hubwrap">
+      <div class="kick">YOUR DAY CHALLENGES</div>
+      <h1 class="big" style="font-size:34px;">Complete all four days.</h1>
+      <div class="hubtop">
+        <div class="tn"><span id="hubTeam">Team</span><small id="hubProg">Team campaign</small></div>
+        <div class="tot"><div class="n" id="hubTotal">0</div><div class="l">Total points</div></div>
+      </div>
+      <div class="daycards" id="dayCards"></div>
+      <div class="hubdone" id="hubDone" style="display:none;"></div>
+      <div style="margin-top:18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+        <span class="backlink" onclick="showScreen('host'); renderHost();">Host scoreboard</span>
+        <span class="backlink" onclick="resetCampaign()">New team</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PLAY ============ -->
+  <section class="screen" id="play">
+    <div class="playgrid">
+      <aside>
+        <div class="console">
+          <h3>Node status</h3>
+          <div class="nodewrap"><svg class="node" id="nodeSvg" viewBox="0 0 250 250" aria-hidden="true"></svg></div>
+          <div class="status-line">Links sealed: <b><span id="sealCount">0</span> / <span id="sealTotal">0</span></b></div>
+          <div id="dayRows"></div>
+        </div>
+      </aside>
+      <div class="mission" id="missionCard"></div>
+    </div>
+  </section>
+
+  <!-- ============ RESULTS (per day) ============ -->
+  <section class="screen" id="results">
+    <div class="results">
+      <div class="seal" id="rSeal">DAY COMPLETE</div>
+      <h1><span id="rDay">Day</span> done, <span class="team" id="rTeam">Team</span>.</h1>
+      <div class="scorebig" id="rScore">0</div>
+      <div class="subscores">
+        <div class="b"><div class="n" id="rAcc">0%</div><div class="l">First-try accuracy</div></div>
+        <div class="b"><div class="n" id="rTime">0:00</div><div class="l">Time</div></div>
+        <div class="b"><div class="n" id="rStreak">0</div><div class="l">Best streak</div></div>
+        <div class="b"><div class="n" id="rSealed">0/0</div><div class="l">Links sealed</div></div>
+      </div>
+      <div class="daychips" id="dayChips"></div>
+      <div class="report">
+        <p class="big">Running total for <b id="rTeam2b">Team</b>: <b id="rTotal" style="color:var(--cyan)">0</b> points across all days played.</p>
+      </div>
+      <div class="recap" id="recap"></div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
+        <button class="btn primary" onclick="renderHub(); showScreen('hub');">Back to your days</button>
+        <button class="btn ghost" onclick="showScreen('host'); renderHost();">Host scoreboard</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HOST ============ -->
+  <section class="screen" id="host">
+    <div class="host">
+      <div class="kick">LIVE STANDINGS</div>
+      <h1>Shared scoreboard <span class="livebadge" id="liveBadge">OFFLINE</span></h1>
+      <p class="note" id="hostNote">Manual mode. Type each team's day score as they report it.</p>
+      <div class="setupbox" id="setupBox" style="display:none;">
+        <b>To go live:</b> create a free Firebase Realtime Database, then paste its URL into the
+        <span class="mono">FIREBASE.databaseURL</span> line near the top of this file. The board then updates by itself
+        as each team finishes a day. Until then, the manual entry below still works.
+      </div>
+      <div class="addbar">
+        <input type="text" class="nm" id="hName" placeholder="Team name" autocomplete="off">
+        <div class="daysel" id="daysel">
+          <button data-d="1" class="on">D1</button><button data-d="2">D2</button><button data-d="3">D3</button><button data-d="4">D4</button>
+        </div>
+        <input type="text" class="pts mono" id="hPts" inputmode="numeric" placeholder="Score">
+        <button class="btn primary" onclick="addTeam()">Add</button>
+      </div>
+      <ul class="board" id="board"></ul>
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+        <span class="backlink" onclick="showScreen('landing')">Back to start</span>
+        <span class="backlink" onclick="clearBoard()">Clear board</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot mono">TONEX - Certified Embedded Systems Cybersecurity Professional - built from the course handbook, Modules 1 to 16</div>
+</div>
+
+<script>
+/* ===================== day metadata ===================== */
+const DAYS = {
+  1:{name:"Map the Target",      accent:"#0070C0"},
+  2:{name:"Root of Trust",       accent:"#1CADE4"},
+  3:{name:"Firmware and Code",   accent:"#C68A2E"},
+  4:{name:"Defend and Update",   accent:"#3B8850"}
+};
+
+/* ===================== mission bank (grounded in handbook + Day 3 deck) ===================== */
+const BANK = [
+  /* ---------- DAY 1 - Modules 1 to 4 ---------- */
+  { day:1, mod:"Module 1 - Intro", name:"See the whole device", seal:"Scope: whole-stack view",
+    scenario:"You are handed an embedded device to assess. A teammate says to just scan its network port like any server.",
+    question:"Why is a network scan not enough for embedded security?",
+    options:[
+      {t:"Embedded devices have no network, so scanning never applies.", correct:false, hint:"Many embedded devices do have network links. The point is that the network is only one slice of the attack surface, not that it is absent."},
+      {t:"You must secure the whole stack: silicon, boot, firmware, debug ports, update path, protocol stack, and physical I/O.", correct:true},
+      {t:"A network scan already covers the firmware and the debug port.", correct:false, hint:"A network scan sees the network endpoint only. It does not reach the boot chain, the debug port, or the physical I/O."}
+    ],
+    teach:"An embedded system is tightly coupled hardware, firmware, and real-time software built for one job. Security has to be understood across silicon, the bootloader, the firmware image, debug ports, the update path, the protocol stack, and physical I/O, because the device lives inside larger IoT, automotive, medical, or industrial systems. A network endpoint is only one slice."
+  },
+  { day:1, mod:"Module 2 - Hardware", name:"Mind the debug port", seal:"Hardware: debug port noted",
+    scenario:"On the board you find a small header with a few pins. It turns out to be a JTAG or SWD debug port.",
+    question:"Why does that port matter to an attacker?",
+    options:[
+      {t:"It is only for power, so it carries no risk.", correct:false, hint:"A debug header is not a power rail. JTAG and SWD reach into the processor itself."},
+      {t:"It is a hardware debug interface that can read memory, halt the CPU, and control the chip.", correct:true},
+      {t:"It only works in the factory and is dead in the field.", correct:false, hint:"If the port is left open, it works in the field too. That is exactly why it must be locked."}
+    ],
+    teach:"Microcontrollers expose hardware interfaces like JTAG and SWD for debugging. Left open, a debug port lets an attacker halt the CPU, read flash and SRAM, and take control of the chip. Embedded hardware security treats Boot ROM, memory protection, boot configuration, and debug ports as first-class parts of the design. Closing or locking the debug port is a core control."
+  },
+  { day:1, mod:"Module 3 - Attack surface", name:"Open the enclosure", seal:"Surface: physical mapped",
+    scenario:"An attacker has the device in hand on a bench. They begin the physical attack.",
+    question:"What physical attack surface do they reach first?",
+    options:[
+      {t:"Only the cloud account the device talks to.", correct:false, hint:"That is a remote target. Physical access is about the board itself: pads, buses, flash, and debug pins."},
+      {t:"The enclosure, the test pads and buses, the flash chip, and the debug interface.", correct:true},
+      {t:"Nothing, because physical access alone reveals no secrets.", correct:false, hint:"Physical access can expose firmware, credentials, configuration, and boot-mode controls. It reveals plenty."}
+    ],
+    teach:"Physical attacks target the device as an object. With board access an attacker can open the enclosure, inspect parts, map test pads, probe SPI or I2C buses, remove flash to dump firmware, hit the debug port, or even inject faults in voltage or clock. Physical access can expose firmware, credentials, configuration, and boot-mode controls. This is the triage you ran on Day 1."
+  },
+  { day:1, mod:"Module 3 - Supply chain", name:"Trust the supply chain", seal:"Surface: supply chain checked",
+    scenario:"A board arrives from a contract manufacturer. It looks fine, but you did not build it yourself.",
+    question:"Why is the supply chain part of the attack surface?",
+    options:[
+      {t:"It is not. Once a board is in hand, its history does not matter.", correct:false, hint:"A device can arrive already compromised. Its history is part of its trust."},
+      {t:"A backdoor or altered part can be inserted before you ever receive the device.", correct:true},
+      {t:"Supply chain risk only applies to software, never to hardware.", correct:false, hint:"Hardware can be swapped or altered in the supply chain too, not just software."}
+    ],
+    teach:"The attack surface is more than the finished device. Supply chain threats let an attacker insert a backdoor, swap a part, or alter firmware before the product reaches you. That is why embedded security treats chip selection, manufacturing state, and field-service access as part of the surface, and why provenance and signing matter from the first stage."
+  },
+  { day:1, mod:"Module 4 - Threat modeling", name:"Root the attack tree", seal:"Threats: tree rooted",
+    scenario:"Your team starts a threat model and begins building an attack tree for the device.",
+    question:"What sits at the root of the tree?",
+    options:[
+      {t:"A list of every tool the attacker owns.", correct:false, hint:"Tools are means, not the goal. The root is what the attacker is trying to achieve."},
+      {t:"The attacker's high-impact goal, such as extract firmware or bypass secure boot, with branches as paths to it.", correct:true},
+      {t:"The device's part number and serial number.", correct:false, hint:"Those are identifiers, not an objective. The root is a goal like controlling an actuator."}
+    ],
+    teach:"An attack tree models compromise as a hierarchy. The root is a high-impact goal such as extracting firmware, bypassing secure boot, controlling an actuator, or gaining persistent debug access. Branches break that goal into paths: physical access, boot-mode abuse, protocol manipulation, credential theft, firmware replacement, or supply-chain insertion. The tree links attacker capability, required access, device state, and outcome."
+  },
+
+  /* ---------- DAY 2 - Modules 5 to 8 ---------- */
+  { day:2, mod:"Module 5 - Root of trust", name:"Hide the key in hardware", seal:"Trust: key in hardware",
+    scenario:"Your device needs a private key for its identity. A developer wants to store it in a normal firmware variable to keep things simple.",
+    question:"Where should that private key actually live?",
+    options:[
+      {t:"In a plain firmware variable, since the code is hard to read.", correct:false, hint:"Once an attacker dumps memory, a key in firmware is right there. Hard to read is not protected."},
+      {t:"In a secure element or hardware root of trust, where firmware cannot read it out.", correct:true},
+      {t:"In a text file on the device flash, next to the config.", correct:false, hint:"Flash can be pulled and read. A key in a file is a key in the attacker's hands."}
+    ],
+    teach:"A secure element is a tamper-resistant component that isolates private keys, certificates, device identity, and counters from the main processor. The secret should never leave that protected boundary. It supports TLS client identity, signature checks, and encrypted storage. A key sitting in normal flash or RAM can be dumped the moment an attacker reaches memory."
+  },
+  { day:2, mod:"Module 6 - Secure boot", name:"Verify the boot chain", seal:"Boot: chain verified",
+    scenario:"Your device boots through several stages: Boot ROM, a bootloader, then the firmware and the application.",
+    question:"How should secure boot treat those stages?",
+    options:[
+      {t:"Load and jump as fast as possible, checking nothing.", correct:false, hint:"That is the unsafe pattern. With no checks, any tampered stage runs freely."},
+      {t:"Verify each stage before it runs, because later software inherits trust from the loader before it.", correct:true},
+      {t:"Check only the final application image and skip the loaders.", correct:false, hint:"If a loader is tampered, it can load anything. You cannot trust the end while skipping the start."}
+    ],
+    teach:"Secure boot treats startup as a chain of verified transitions, not a simple load and jump. Execution begins in immutable Boot ROM, the trust anchor. Each stage verifies the next before handing off, because later software inherits trust from earlier loaders. Skip an early stage and everything after is built on unverified code. Fuses, mode pins, and lifecycle state shape this behavior."
+  },
+  { day:2, mod:"Module 7 - Cryptography", name:"More than secret", seal:"Crypto: integrity added",
+    scenario:"Your device encrypts its telemetry with AES so outsiders cannot read it. The team feels done.",
+    question:"Is confidentiality alone enough here?",
+    options:[
+      {t:"Yes. If the data is encrypted, it is fully protected.", correct:false, hint:"Encryption hides the data but does not stop tampering. An attacker can still alter ciphertext."},
+      {t:"No. Use authenticated encryption such as AEAD, so the data also cannot be silently changed.", correct:true},
+      {t:"No. The fix is to encrypt the same data twice.", correct:false, hint:"Double encryption adds cost, not integrity. You need an authenticated mode, not a second pass."}
+    ],
+    teach:"In embedded systems, confidentiality alone is not enough. Authenticated encryption modes such as AEAD protect ciphertext integrity and bind metadata like device ID, firmware version, or protocol context. Plain encryption hides the data but does not stop tampering. The implementation also has to handle nonce uniqueness, random number quality, and keeping keys out of normal RAM."
+  },
+  { day:2, mod:"Module 8 - Key management", name:"One key per device", seal:"Keys: unique per device",
+    scenario:"To save time at the factory, a plan suggests loading the same key into every unit in the fleet.",
+    question:"What is wrong with one shared fleet key?",
+    options:[
+      {t:"Nothing. A shared key is simpler and just as safe.", correct:false, hint:"Simpler, yes. Safe, no. One key now guards thousands of devices."},
+      {t:"One leaked shared key compromises every unit, so each device needs unique material.", correct:true},
+      {t:"Shared keys are fine as long as they are very long.", correct:false, hint:"Length does not help when the same key is everywhere. One leak still breaks the whole fleet."}
+    ],
+    teach:"Key provisioning places identities, secrets, and trust anchors into the device at manufacture or first boot. It must use unique per-device material, not shared fleet keys, because a single leaked shared key can compromise many units at once. Good provisioning also needs entropy quality, authenticated factory tools, audit records, and anti-cloning controls."
+  },
+  { day:2, mod:"Module 8 - Lifecycle", name:"Close the factory door", seal:"Lifecycle: factory locked",
+    scenario:"Provisioning is done and the device is about to ship, but the debug and factory test access used during manufacturing is still open.",
+    question:"What should happen to that access now?",
+    options:[
+      {t:"Leave it open in case a technician needs it later.", correct:false, hint:"An open factory door is the same door an attacker uses to read memory or reflash the part."},
+      {t:"Move the device to a locked lifecycle state that closes debug and manufacturing access.", correct:true},
+      {t:"Hide the test pads under a sticker and call it closed.", correct:false, hint:"A sticker is not a control. The access is still live underneath."}
+    ],
+    teach:"Provisioning ends with a lifecycle state change. Once unique keys and certificates are in place, the device should move to a locked state that closes debug and manufacturing access. Leaving factory access open is the same open door an attacker uses to read memory or reflash the part. The state change is enforced in hardware, not by a label."
+  },
+
+  /* ---------- DAY 3 - Modules 9 to 10 ---------- */
+  { day:3, mod:"Module 9 - Firmware", name:"Hide it or prove it", seal:"Firmware: signed and sealed",
+    scenario:"A vendor says their firmware is encrypted, so it must be secure and genuine.",
+    question:"Does encryption prove the firmware is genuine?",
+    options:[
+      {t:"Yes. Encryption proves the firmware is authentic.", correct:false, hint:"Encryption hides the code. It says nothing about who made it. That is the signature's job."},
+      {t:"No. Encryption hides the code, a signature proves it is authentic, and you need both.", correct:true},
+      {t:"No. You only ever need encryption, never signing.", correct:false, hint:"Without a signature you cannot prove the image is genuine or unchanged. Encryption alone is not enough."}
+    ],
+    teach:"Encryption and signing do different jobs. Encryption hides the code so secrets are harder to read and offline analysis is harder. A signature proves the image is authentic and unchanged, and it anchors trust before boot. Encryption does not prove who made the image, and signing does not hide it. A secure update needs both."
+  },
+  { day:3, mod:"Module 9 - Firmware", name:"Read the stack", seal:"Firmware: layers read",
+    scenario:"You dumped a firmware image and need to make sense of its layers: application, RTOS or kernel, bootloader, and Boot ROM.",
+    question:"Which way do you read the layers to follow how the chip starts?",
+    options:[
+      {t:"Top down, starting at the application.", correct:false, hint:"The app runs last, not first. Reading top down hides how trust is passed up the chain."},
+      {t:"Bottom up, the same way the chip boots: Boot ROM first, then up to the app.", correct:true},
+      {t:"Order does not matter, the layers are independent.", correct:false, hint:"The layers are a trust chain, not independent blocks. Order is the whole point."}
+    ],
+    teach:"Firmware is organized in layers, and you read the stack from the bottom up, the same way the chip boots it. Boot ROM and the first loader come first and hold the most trust, then the bootloader, then the RTOS or kernel, then the application. Reading bottom up shows how trust is passed and where a break in the chain would let untrusted code run."
+  },
+  { day:3, mod:"Module 10 - Secure coding", name:"Past the boundary", seal:"Code: overflow understood",
+    scenario:"A function copies input into a fixed buffer with no length check. An attacker sends more bytes than the buffer holds.",
+    question:"Why is that one bug so dangerous?",
+    options:[
+      {t:"It only makes the screen flicker.", correct:false, hint:"This is a memory safety bug, not a display glitch. It reaches the program's control flow."},
+      {t:"Writing past the buffer overwrites the saved return address, so the attacker can redirect the program.", correct:true},
+      {t:"The extra bytes are dropped safely and nothing happens.", correct:false, hint:"With no bounds check, the extra bytes are not dropped. They land in the memory next door."}
+    ],
+    teach:"A buffer overflow writes past the end of a buffer and into the memory next to it, including the saved return address. By controlling what lands there, an attacker can redirect execution and take control. On a small chip with no memory isolation, one overflow can reach the whole device. The fix is bounds checking and safe functions, not luck."
+  },
+  { day:3, mod:"Module 10 - Secure coding", name:"Swap the unsafe call", seal:"Code: unsafe call replaced",
+    scenario:"Your code review finds a call that reads input with no size limit, the classic unbounded read.",
+    question:"What is the fix?",
+    options:[
+      {t:"Leave it, but add a comment warning about it.", correct:false, hint:"A comment does not stop the overflow. The unsafe call is still there."},
+      {t:"Replace the unbounded read with a bounded one that cannot pass the buffer size.", correct:true},
+      {t:"Make the buffer slightly larger and move on.", correct:false, hint:"A bigger buffer just moves the line. A long enough input still overflows it."}
+    ],
+    teach:"Secure coding standards like MISRA C and CERT C push you to remove unsafe functions. An unbounded read such as gets writes as much as the attacker sends. Swapping it for a bounded read such as fgets caps the input at the buffer size. A bigger buffer or a comment does not fix the flaw. The single safe call closes the door."
+  },
+  { day:3, mod:"Module 10 - Secure coding", name:"Guard the stack", seal:"Code: stack guarded",
+    scenario:"You want a layered defense so a future overflow cannot quietly hijack the device.",
+    question:"Which set of controls protects the stack?",
+    options:[
+      {t:"A longer Wi-Fi password.", correct:false, hint:"That guards the network login, not the memory on the chip. Different layer entirely."},
+      {t:"A stack canary, an MPU region, and bounds checking on inputs.", correct:true},
+      {t:"Turning the device off at night.", correct:false, hint:"Downtime is not a memory protection. The flaw is still there when it powers on."}
+    ],
+    teach:"You protect the stack with layers. A stack canary catches a return address that was overwritten. An MPU region isolates memory so a task cannot reach where it should not. Bounds checking stops the overflow at the source. Separate task stacks and safe functions add more cover. No single control is enough, so you stack them. Canaries, isolation, and bounds checks close most of the gap."
+  },
+
+  /* ---------- DAY 4 - Modules 11 to 16 ---------- */
+  { day:4, mod:"Module 11 - Transport", name:"Lock the channel", seal:"Cloud link: TLS sealed",
+    scenario:"Your tactical node streams sensor telemetry to a cloud gateway. Right now it sends in the clear. Anyone on the path can read the data, and even change it.",
+    question:"What control locks this channel?",
+    options:[
+      {t:"Scramble the payload with a secret formula so the bytes look random.", correct:false, hint:"Scrambling is not encryption. With no verified identity and no protected key, an attacker can still read or replay the traffic."},
+      {t:"Open a TLS session, check the server identity, and protect the private key.", correct:true},
+      {t:"Send the data only at night, when fewer people are listening.", correct:false, hint:"Timing protects nothing. The channel is open every time it is used."}
+    ],
+    teach:"TLS gives the device authenticated and encrypted transport. The link is now private, and the node knows it is talking to the real gateway. The hard part on a small device is the fit: little RAM, little flash, weak entropy, and slow handshakes. Embedded TLS handles that with ECC certificates, smaller cipher suites, and session reuse. The security still rests on checking the server identity and protecting the private key."
+  },
+  { day:4, mod:"Module 11 - MQTT", name:"Trust the messages", seal:"Messaging: broker trust set",
+    scenario:"Your fleet uses MQTT. Devices publish to topics and a broker routes the messages. Right now anyone who reaches the broker can publish to the command topic.",
+    question:"How do you make sure only the right sender can command a device?",
+    options:[
+      {t:"Trust any message on the command topic, since the topic name is hard to guess.", correct:false, hint:"A topic name is not a secret and not a check. If anyone can publish to it, anyone can command the device."},
+      {t:"Require broker login, give each device a unique client identity, and set topic rules for who may publish and who may read.", correct:true},
+      {t:"Raise the quality of service level so messages arrive more reliably.", correct:false, hint:"Quality of service controls delivery, not trust. A reliably delivered forged command is still forged."}
+    ],
+    teach:"The broker is the central trust decision. Secure MQTT combines transport protection with broker login, a unique client identity per device, and topic access rules. Now the broker checks who may publish to the command channel and who may listen. Without these, anyone who grabs the microphone on the command channel can order your device to act."
+  },
+  { day:4, mod:"Module 11 - CAN", name:"Tame the bus", seal:"Control bus: identity added",
+    scenario:"Your node shares a CAN bus with other controllers. The bus was built for speed, not trust. A node just accepted a forged control frame, because a frame does not prove who sent it.",
+    question:"What do you add so the bus stops trusting forged frames?",
+    options:[
+      {t:"Switch to CAN FD so each frame can carry more data.", correct:false, hint:"More room in the frame is still not a sender check. CAN FD changes the size, not the trust."},
+      {t:"Add message authentication, segment the bus with a gateway, and watch traffic with intrusion detection.", correct:true},
+      {t:"Give the attacker frames a lower priority ID so real frames win.", correct:false, hint:"Priority decides who talks first, not who is allowed to talk. A forged frame is still trusted."}
+    ],
+    teach:"CAN was built for speed and reliability, not trust. Every node hears every frame, and the bus trusts a frame by its ID, not by any signature. So you add what CAN lacks: message authentication so a frame proves its sender, a gateway to segment networks and limit lateral movement, and intrusion detection to flag abnormal traffic. CAN FD gives larger frames, but more payload room does not add trust."
+  },
+  { day:4, mod:"Module 11 - Wireless", name:"Mind the air", seal:"Radios: per-link keys set",
+    scenario:"Your node carries several radios: Wi-Fi, BLE, and a long-range link. A BLE connection just paired with an unknown device nearby. Radios open pairing, command, and update paths far beyond the locked room.",
+    question:"How do you secure the wireless surface?",
+    options:[
+      {t:"Hide the device name so attackers cannot find it.", correct:false, hint:"A hidden name is still discoverable, and hiding is not a control. The pairing stays open."},
+      {t:"Use one shared key across the whole fleet, so every device trusts every other.", correct:false, hint:"One shared key means one stolen key breaks every device. Each link needs its own keys."},
+      {t:"Give each radio link its own pairing, keys, and join checks.", correct:true}
+    ],
+    teach:"Every radio opens pairing, discovery, command, and update paths that reach past physical access. Each protocol has its own controls: BLE bonding and pairing policy, Wi-Fi credentials and certificates, Zigbee or Thread join trust and group keys, LoRaWAN join and session keys, and cellular SIM and APN trust. Each link needs its own pairing, keys, and checks. A single shared key is the opposite of safe, because one leak unlocks the whole fleet."
+  },
+  { day:4, mod:"Module 12 - Integrity", name:"Prove the update", seal:"Updates: integrity verified",
+    scenario:"An over-the-air update arrives for your node. It came down over a TLS connection. The node is about to install it.",
+    question:"Is a safe transport channel enough to install it?",
+    options:[
+      {t:"Yes. It arrived over TLS, so the package is trusted.", correct:false, hint:"TLS protects the trip, not the cargo. A signed update from a real source is what you trust."},
+      {t:"Check the version number on the package and install it if it is newer.", correct:false, hint:"A version number is metadata an attacker can set. It is not proof of integrity."},
+      {t:"Verify the manifest signature and the image hash before installing, no matter how it arrived.", correct:true}
+    ],
+    teach:"The update client must verify what it installs, not just where it came from. A safe channel protects the delivery, but it does not prove the package is genuine or unchanged. The signature authenticates the release source and blocks forged firmware. The hash proves the image was not altered. You check both before install, at boot, and on the recovery image, so only trusted code ever runs."
+  },
+  { day:4, mod:"Module 12 - Rollback", name:"Block the rewind", seal:"Updates: rollback blocked",
+    scenario:"An attacker sends your node an older firmware image. It is real and validly signed, but it carries a known bug the attacker wants back.",
+    question:"Your signature check passes. Do you install it?",
+    options:[
+      {t:"Yes. The signature is valid, so the image is allowed.", correct:false, hint:"A valid signature only proves the image is genuine, not that it is safe to run today. The old bug comes right back."},
+      {t:"No. A monotonic counter sets a minimum version, so an older signed image is refused.", correct:true},
+      {t:"Yes, but delete the older image from flash right after it boots.", correct:false, hint:"By the time you delete it, the buggy image already booted. The floor has to refuse it before install."}
+    ],
+    teach:"Rollback protection stops an attacker from installing an older, validly signed image. A monotonic counter in secure storage, or an eFuse version floor in hardware, tracks the minimum version the device will accept. Signed metadata binds the version to the image so it cannot be edited alone, and the bootloader refuses anything below the floor. A valid signature proves the image is real. It does not prove it is current."
+  },
+  { day:4, mod:"Module 12 - Update risk", name:"Guard the source", seal:"Source: signing key guarded",
+    scenario:"You have locked the channels and the update checks. Now think like the attacker. The update path can change the code and policy on every device in the field.",
+    question:"What is the highest-value target to protect?",
+    options:[
+      {t:"The flash chip on one device in the lab.", correct:false, hint:"One device flash is low leverage. The attacker wants the source that every device trusts."},
+      {t:"The user password on the admin laptop.", correct:false, hint:"A password is a way in, but the prize is the signing key. With it, the attacker signs firmware the whole fleet accepts."},
+      {t:"The signing key and the release server, because a stolen key makes valid malicious firmware.", correct:true}
+    ],
+    teach:"The update path can change persistent code and policy across the whole fleet, so it is one of the highest-value targets. If the signing key is stolen, the attacker can sign valid malicious firmware that every device will accept. So you protect the key in a hardware security module, watch the signing logs, and harden the release server. You also test for weak validation, interrupted installs, wrong targeting, and recovery abuse."
+  }
+];
+
+/* ===================== state ===================== */
+const SPEED_WINDOW = 30;       // seconds for full speed bonus
+let teamName = "Team";
+let missions = [];             // active set for the current day
+let idx = 0;
+let score = 0, streak = 0, bestStreak = 0, firstTryCorrect = 0;
+let attemptsThisMission = 0, missionAnswered = false;
+let runStart = 0, missionStart = 0, timerId = null, remaining = SPEED_WINDOW;
+let curDay = 1;
+
+/* campaign: per-day best scores, tracked together into one total */
+let campaign = { team:"", days:{} };   // days[d] = {score, acc, sealed, total}
+const CKEY = "chn_campaign_v1";
+function saveCampaign(){ try{ localStorage.setItem(CKEY, JSON.stringify(campaign)); }catch(e){} }
+function loadCampaign(name){
+  let saved=null;
+  try{ saved=JSON.parse(localStorage.getItem(CKEY)||"null"); }catch(e){ saved=null; }
+  if(saved && saved.team && saved.team.toLowerCase()===name.toLowerCase()){
+    campaign=saved;                 // resume the same team on this device
+  } else {
+    campaign={team:name, days:{}};  // fresh campaign
+    saveCampaign();
+  }
+}
+function campaignTotal(){ return [1,2,3,4].reduce((s,d)=> s + (campaign.days[d]?campaign.days[d].score:0), 0); }
+function daysDone(){ return [1,2,3,4].filter(d=>campaign.days[d]).length; }
+function resetCampaign(){ campaign={team:"",days:{}}; try{ localStorage.removeItem(CKEY); }catch(e){} goLobby(); }
+
+/* =====================================================================
+   SHARED LIVE SCOREBOARD (optional)
+   Paste your Firebase Realtime Database URL below to turn on the live,
+   auto-updating shared board. Leave it empty to use the manual board.
+   Example: databaseURL: "https://your-project-default-rtdb.firebaseio.com"
+   ===================================================================== */
+const FIREBASE = {
+  databaseURL: ""   // <-- paste your Realtime Database URL here
+};
+const ONLINE = !!(FIREBASE.databaseURL && FIREBASE.databaseURL.trim());
+const DBROOT = (FIREBASE.databaseURL||"").trim().replace(/\/+$/,"");
+function fbUrl(path){ return DBROOT + "/" + path + ".json"; }
+let fbCache = {};          // {key:{name,days}} from the shared board
+let fbStatus = "off";      // off | live | warn
+let pollId = null;
+
+function keyOf(name){
+  return (String(name).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"")) || "team";
+}
+async function fbPatch(path,obj){
+  return fetch(fbUrl(path),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(obj)});
+}
+async function fbDelete(path){ return fetch(fbUrl(path),{method:"DELETE"}); }
+async function fbWriteDay(name, day, scoreVal){
+  if(!ONLINE) return;
+  const k=keyOf(name);
+  try{
+    await fbPatch("scoreboard/"+k, {name:name});
+    await fbPatch("scoreboard/"+k+"/days", {[day]:scoreVal});
+    fbStatus="live";
+  }catch(e){ fbStatus="warn"; }
+}
+async function fbFetchBoard(){
+  if(!ONLINE) return;
+  try{
+    const r=await fetch(fbUrl("scoreboard"));
+    const data=await r.json();
+    fbCache = data || {};
+    fbStatus="live";
+  }catch(e){ fbStatus="warn"; }
+  if(document.getElementById('host').classList.contains('active')) renderHost();
+}
+function startPoll(){ if(!ONLINE) return; fbFetchBoard(); stopPoll(); pollId=setInterval(fbFetchBoard, 4000); }
+function stopPoll(){ if(pollId){ clearInterval(pollId); pollId=null; } }
+
+/* ===================== screen control ===================== */
+function showScreen(id){
+  stopTimer();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('topstats').style.display = (id==='play') ? 'flex' : 'none';
+  if(id==='host') startPoll(); else stopPoll();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function goLobby(){ showScreen('lobby'); setTimeout(()=>document.getElementById('teamInput').focus(),60); }
+document.getElementById('teamInput').addEventListener('keydown',e=>{ if(e.key==='Enter') continueToHub(); });
+
+function continueToHub(){
+  const nm=document.getElementById('teamInput').value.trim();
+  if(!nm){ document.getElementById('teamInput').focus(); return; }
+  loadCampaign(nm);
+  renderHub(); showScreen('hub');
+}
+
+/* ===================== campaign hub ===================== */
+function renderHub(){
+  document.getElementById('hubTeam').textContent=campaign.team;
+  document.getElementById('hubTotal').textContent=campaignTotal();
+  document.getElementById('hubProg').textContent=daysDone()+' of 4 days complete';
+  const cards=document.getElementById('dayCards');
+  cards.innerHTML=[1,2,3,4].map(d=>{
+    const rec=campaign.days[d]; const done=!!rec;
+    const cnt=BANK.filter(m=>m.day===d).length;
+    return `<div class="daycard ${done?'done':''}">
+      <div class="dtop"><div class="dname">Day ${d}<small>${DAYS[d].name}</small></div>
+        <div class="dstat ${done?'ok':''}">${done?'Complete':cnt+' missions'}</div></div>
+      <div class="dscore">${done?rec.score:'<span class="pend">not played yet</span>'}</div>
+      <div class="drow"><span class="dstat">${done?('sealed '+rec.sealed+'/'+cnt+', '+rec.acc+'% first try'):'&nbsp;'}</span>
+        <button class="btn ${done?'ghost':'primary'}" onclick="beginDay(${d})">${done?'Replay':'Play Day '+d}</button></div>
+    </div>`;
+  }).join('');
+  const banner=document.getElementById('hubDone');
+  if(daysDone()===4){
+    banner.style.display='block';
+    banner.innerHTML=`<div class="v">Campaign complete</div>`+
+      `<h3>${esc(campaign.team)} hardened the node across all four days.</h3>`+
+      `<p>Combined total: <b style="color:var(--cyan)">${campaignTotal()}</b> points. Report it to the host scoreboard.</p>`+
+      `<div style="margin-top:12px;"><button class="btn primary" onclick="showScreen('host'); renderHost();">Open host scoreboard</button></div>`;
+  } else { banner.style.display='none'; }
+}
+
+/* ===================== build a day ===================== */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+function beginDay(d){
+  curDay=d; teamName=campaign.team;
+  missions = BANK.filter(m=> m.day===d)
+                 .map(m=>({...m, options:shuffle(m.options.map(o=>({...o})))}));
+  idx=0; score=0; streak=0; bestStreak=0; firstTryCorrect=0; runStart=Date.now();
+  document.getElementById('tTeam').textContent = teamName;
+  buildRing(); buildDayRows();
+  showScreen('play'); renderMission();
+}
+
+/* ===================== node ring ===================== */
+function buildRing(){
+  const svg=document.getElementById('nodeSvg');
+  const cx=125,cy=125,R=88,coreR=34;
+  const n=missions.length;
+  let s='';
+  for(let i=0;i<n;i++){
+    const ang=(-90 + i*(360/n))*Math.PI/180;
+    const px=cx+R*Math.cos(ang), py=cy+R*Math.sin(ang);
+    const pr = n>14?7:10;
+    s+=`<line id="lk${i}" x1="${cx}" y1="${cy}" x2="${px.toFixed(1)}" y2="${py.toFixed(1)}" stroke="#B23A3A" stroke-width="1.6" stroke-dasharray="3 3" opacity="0.7"/>`;
+    s+=`<circle id="pt${i}" cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${pr}" fill="#161D22" stroke="#B23A3A" stroke-width="2"/>`;
+  }
+  s+=`<circle cx="${cx}" cy="${cy}" r="${coreR}" fill="#0D1117" stroke="#1CADE4" stroke-width="2.5"/>`;
+  s+=`<text x="${cx}" y="${cy-3}" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold" fill="#1CADE4">NODE</text>`;
+  s+=`<text id="nodePct" x="${cx}" y="${cy+14}" text-anchor="middle" font-family="Courier New, monospace" font-size="12" fill="#969FA7">0%</text>`;
+  svg.innerHTML=s;
+  document.getElementById('sealTotal').textContent=n;
+  document.getElementById('sealCount').textContent=0;
+}
+function sealPort(i){
+  const pt=document.getElementById('pt'+i), lk=document.getElementById('lk'+i);
+  if(pt){ pt.setAttribute('stroke','#3FB950'); pt.setAttribute('fill','rgba(63,185,80,0.20)'); }
+  if(lk){ lk.setAttribute('stroke','#3FB950'); lk.removeAttribute('stroke-dasharray'); lk.setAttribute('opacity','1'); }
+  const done=missions.filter(m=>m._sealed).length;
+  const pct=Math.round(done/missions.length*100);
+  document.getElementById('nodePct').textContent=pct+'%';
+  document.getElementById('sealCount').textContent=done;
+  updateDayRows();
+}
+
+/* day progress rows */
+function activeDays(){ return [...new Set(missions.map(m=>m.day))].sort(); }
+function buildDayRows(){
+  const wrap=document.getElementById('dayRows');
+  wrap.innerHTML=activeDays().map(d=>{
+    const tot=missions.filter(m=>m.day===d).length;
+    return `<div class="dayrow"><span class="dn">Day ${d}<small>${DAYS[d].name}</small></span>`+
+      `<span class="dbar"><span id="db${d}" style="background:${DAYS[d].accent}"></span></span>`+
+      `<span class="cnt" id="dc${d}">0/${tot}</span></div>`;
+  }).join('');
+  updateDayRows();
+}
+function updateDayRows(){
+  activeDays().forEach(d=>{
+    const tot=missions.filter(m=>m.day===d).length;
+    const done=missions.filter(m=>m.day===d && m._sealed).length;
+    const bar=document.getElementById('db'+d), cnt=document.getElementById('dc'+d);
+    if(bar) bar.style.width=(done/tot*100)+'%';
+    if(cnt) cnt.textContent=done+'/'+tot;
+  });
+}
+
+/* ===================== timer ===================== */
+function startTimer(){
+  remaining=SPEED_WINDOW; missionStart=Date.now();
+  const bar=document.getElementById('timeBar'), num=document.getElementById('timeLeft');
+  if(bar) bar.style.width='100%';
+  if(num) num.textContent=remaining+'s';
+  stopTimer();
+  timerId=setInterval(()=>{
+    remaining-=0.1;
+    if(remaining<=0){ remaining=0; stopTimer(); }
+    if(bar) bar.style.width=(remaining/SPEED_WINDOW*100)+'%';
+    if(num) num.textContent=Math.ceil(remaining)+'s';
+  },100);
+}
+function stopTimer(){ if(timerId){ clearInterval(timerId); timerId=null; } }
+
+/* ===================== mission render ===================== */
+function renderMission(){
+  const m=missions[idx];
+  attemptsThisMission=0; missionAnswered=false;
+  document.getElementById('tMission').textContent=(idx+1)+'/'+missions.length;
+  document.getElementById('tScore').textContent=score;
+  document.getElementById('tStreak').textContent=streak;
+  const keys=['A','B','C','D'];
+  document.getElementById('missionCard').innerHTML=
+    `<div class="mhead"><span class="mno">MISSION ${idx+1} / ${missions.length}</span>`+
+      `<span class="mod">Day ${m.day} - ${m.mod}</span>`+
+      `<span class="timer"><span class="tbar"><span id="timeBar"></span></span><span class="tnum" id="timeLeft">${SPEED_WINDOW}s</span></span></div>`+
+    `<h2>${m.name}</h2>`+
+    `<div class="scenario">${m.scenario}</div>`+
+    `<div class="qline">${m.question}</div>`+
+    `<div class="opts" id="opts">`+
+      m.options.map((o,i)=>`<button class="opt" id="op${i}" onclick="choose(${i})"><span class="key">${keys[i]}</span><span>${o.t}</span></button>`).join('')+
+    `</div><div class="reveal" id="reveal"></div>`;
+  startTimer();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function choose(i){
+  if(missionAnswered) return;
+  const m=missions[idx], opt=document.getElementById('op'+i);
+  if(m.options[i].correct){
+    stopTimer();
+    missionAnswered=true;
+    m.options.forEach((o,j)=>{ document.getElementById('op'+j).disabled=true; });
+    opt.classList.add('correct');
+    // scoring
+    let base = attemptsThisMission===0 ? 100 : (attemptsThisMission===1 ? 60 : 30);
+    let speed=0, streakBonus=0;
+    if(attemptsThisMission===0){
+      firstTryCorrect++;
+      streak++; if(streak>bestStreak) bestStreak=streak;
+      speed = Math.round(remaining/SPEED_WINDOW*50);
+      if(streak>=2) streakBonus=(streak-1)*20;
+    } else {
+      streak=0;
+    }
+    const gained=base+speed+streakBonus;
+    score+=gained;
+    m._sealed=true; sealPort(idx);
+    document.getElementById('tScore').textContent=score;
+    document.getElementById('tStreak').textContent=streak;
+    const rv=document.getElementById('reveal');
+    rv.className='reveal good show';
+    let bonusTxt = `+${base} answer`+(speed?` +${speed} speed`:'')+(streakBonus?` +${streakBonus} streak`:'');
+    rv.innerHTML=`<div class="verdict">Link sealed - ${m.seal}</div><p>${m.teach}</p>`+
+      `<div class="nextrow"><span class="pts">${bonusTxt}</span>`+
+      (idx<missions.length-1
+        ? `<button class="btn primary" onclick="nextMission()">Next mission</button>`
+        : `<button class="btn primary" onclick="finishDay()">See your day result</button>`)+`</div>`;
+  } else {
+    attemptsThisMission++;
+    opt.classList.add('wrong'); opt.disabled=true;
+    streak=0; document.getElementById('tStreak').textContent=streak;
+    const rv=document.getElementById('reveal');
+    rv.className='reveal bad show';
+    rv.innerHTML=`<div class="verdict">Still exposed</div><p>${m.options[i].hint}</p>`+
+      `<p style="color:var(--muted);font-size:14px;">Talk it over and pick another control.</p>`;
+  }
+}
+function nextMission(){ if(idx<missions.length-1){ idx++; renderMission(); } }
+
+/* ===================== day result ===================== */
+function fmtTime(ms){ const s=Math.round(ms/1000); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function finishDay(){
+  stopTimer();
+  const cnt=missions.length;
+  const sealedN=missions.filter(m=>m._sealed).length;
+  const acc=Math.round(firstTryCorrect/cnt*100);
+  // keep the best score per day, then add into the combined total
+  const prev=campaign.days[curDay];
+  if(!prev || score>prev.score){
+    campaign.days[curDay]={score:score, acc:acc, sealed:sealedN, total:cnt};
+  }
+  saveCampaign();
+  if(ONLINE) fbWriteDay(campaign.team, curDay, campaign.days[curDay].score);
+  document.getElementById('rTeam').textContent=campaign.team;
+  document.getElementById('rTeam2b').textContent=campaign.team;
+  document.getElementById('rDay').textContent='Day '+curDay;
+  document.getElementById('rScore').textContent=score;
+  document.getElementById('rAcc').textContent=acc+'%';
+  document.getElementById('rTime').textContent=fmtTime(Date.now()-runStart);
+  document.getElementById('rStreak').textContent=bestStreak;
+  document.getElementById('rSealed').textContent=sealedN+'/'+cnt;
+  document.getElementById('rSeal').textContent = (sealedN===cnt?'DAY '+curDay+' FULLY HARDENED':'DAY '+curDay+' COMPLETE');
+  document.getElementById('rTotal').textContent=campaignTotal();
+  document.getElementById('dayChips').innerHTML=[1,2,3,4].map(d=>{
+    const rec=campaign.days[d];
+    return `<div class="daychip ${rec?'done':'pending'}"><div class="l">Day ${d}</div><div class="n">${rec?rec.score:'--'}</div></div>`;
+  }).join('');
+  document.getElementById('recap').innerHTML=missions.map(m=>
+    `<div class="item"><b>${m.name}</b><span>${m.seal}</span></div>`).join('');
+  lastResult={name:campaign.team, day:curDay, score:score};
+  showScreen('results');
+}
+
+/* ===================== shared scoreboard (live online, manual offline) ===================== */
+let teams=[]; let lastResult=null; let hostDay=1;
+function setHostDay(d){ hostDay=d; document.querySelectorAll('#daysel button').forEach(b=>b.classList.toggle('on', parseInt(b.dataset.d,10)===d)); }
+document.getElementById('daysel').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) setHostDay(parseInt(b.dataset.d,10)); });
+function teamTotal(t){ return [1,2,3,4].reduce((s,d)=> s+(t.days&&t.days[d]!=null?Number(t.days[d]):0), 0); }
+function getBoard(){
+  if(ONLINE){
+    return Object.keys(fbCache||{}).map(k=>({key:k, name:(fbCache[k]&&fbCache[k].name)||k, days:(fbCache[k]&&fbCache[k].days)||{}}));
+  }
+  return teams.map((t,i)=>({idx:i, name:t.name, days:t.days}));
+}
+function addTeam(){
+  const nmEl=document.getElementById('hName'), ptEl=document.getElementById('hPts');
+  const nm=nmEl.value.trim(); const pts=parseInt(ptEl.value,10);
+  if(!nm || isNaN(pts)){ if(!nm) nmEl.focus(); else ptEl.focus(); return; }
+  if(ONLINE){ fbWriteDay(nm, hostDay, pts).then(fbFetchBoard); }
+  else {
+    let t=teams.find(x=>x.name.toLowerCase()===nm.toLowerCase());
+    if(!t){ t={name:nm, days:{}}; teams.push(t); }
+    t.days[hostDay]=pts; renderHost();
+  }
+  nmEl.value=''; ptEl.value=''; nmEl.focus();
+}
+function removeLocal(i){ teams.splice(i,1); renderHost(); }
+function removeOnline(k){ fbDelete("scoreboard/"+k).then(fbFetchBoard); }
+function clearBoard(){
+  if(ONLINE){ fbDelete("scoreboard").then(()=>{ fbCache={}; renderHost(); }); }
+  else { teams=[]; renderHost(); }
+}
+function renderHost(){
+  const badge=document.getElementById('liveBadge'), note=document.getElementById('hostNote'), setup=document.getElementById('setupBox');
+  if(!ONLINE){
+    badge.className='livebadge'; badge.textContent='OFFLINE';
+    note.textContent="Manual mode. Type in each team's day score as they report it.";
+    setup.style.display='block';
+  } else if(fbStatus==='warn'){
+    badge.className='livebadge warn'; badge.textContent='RECONNECTING';
+    note.textContent="Live board. Trying to reach the shared database.";
+    setup.style.display='none';
+  } else {
+    badge.className='livebadge on'; badge.textContent='LIVE';
+    note.textContent="Live board. Every team's score appears here by itself as they finish each day.";
+    setup.style.display='none';
+  }
+  if(lastResult && !ONLINE){
+    document.getElementById('hName').value=lastResult.name;
+    document.getElementById('hPts').value=lastResult.score;
+    setHostDay(lastResult.day||1);
+    lastResult=null;
+  }
+  const board=document.getElementById('board');
+  const items=getBoard().sort((a,b)=>teamTotal(b)-teamTotal(a));
+  if(items.length===0){
+    board.innerHTML='<li class="empty">'+(ONLINE?'Waiting for the first team to finish a day.':'No teams yet. Add a team and a day score above.')+'</li>';
+    return;
+  }
+  const head=`<li class="bhead"><span class="rank"></span><span class="tn">Team</span>`+
+    `<span class="days"><span class="dcell">D1</span><span class="dcell">D2</span><span class="dcell">D3</span><span class="dcell">D4</span></span>`+
+    `<span class="ps">Total</span><span style="width:24px"></span></li>`;
+  board.innerHTML=head+items.map((t,r)=>{
+    const cls=r===0?'p1':(r===1?'p2':(r===2?'p3':''));
+    const cells=[1,2,3,4].map(d=>`<span class="dcell ${t.days[d]!=null?'has':''}">${t.days[d]!=null?t.days[d]:'-'}</span>`).join('');
+    const del = ONLINE ? `removeOnline('${t.key}')` : `removeLocal(${t.idx})`;
+    return `<li class="${cls}"><span class="rank">${r+1}</span><span class="tn">${esc(t.name)}</span>`+
+      `<span class="days">${cells}</span><span class="ps">${teamTotal(t)}</span>`+
+      `<button class="x" aria-label="remove" onclick="${del}">x</button></li>`;
+  }).join('');
+}
+document.getElementById('hPts').addEventListener('keydown',e=>{ if(e.key==='Enter') addTeam(); });
+document.getElementById('hName').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('hPts').focus(); });
+
+/* keyboard answer shortcuts during play */
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('play').classList.contains('active')) return;
+  const map={a:0,b:1,c:2,d:3}; const k=e.key.toLowerCase();
+  if(k in map){ const b=document.getElementById('op'+map[k]); if(b && !b.disabled) b.click(); }
+  if(k==='n'){ const nb=document.querySelector('#reveal .btn.primary'); if(nb) nb.click(); }
+});
+</script>
+</body>
+</html>
