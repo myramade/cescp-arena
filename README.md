@@ -4,7 +4,7 @@ Myra's CESCP Class
 
 A team challenge for the CESCP Embedded Systems Cybersecurity Bootcamp.
 
-You and your team defend one embedded device across all four days of the bootcamp. Make the right security call, seal the node, and earn points. The team with the most points across all four days wins.
+You and your team defend one embedded device across all four days of the bootcamp. Make the right security call, seal the node, and earn points. The team with the most points across all four missions wins.
 
 **Play here:** [Open the game](https://myramade.github.io/cescp-arena/)
 
@@ -18,8 +18,8 @@ You and your team defend one embedded device across all four days of the bootcam
 
 1. Open the game link on the one laptop your team will use.
 2. Click **Play as a team**.
-3. Type your team name. Use the **same name and the same laptop** every time, so your points from each day add up.
-4. You will see four day challenges. Play the day your instructor picks.
+3. Type your team name. Use the **same name and the same laptop** every time, so your points from each mission add up.
+4. You will see the challenges across four day. Play the day your instructor picks.
 
 ## How a mission works
 
