@@ -641,7 +641,7 @@ function resetCampaign(){ campaign={team:"",days:{}}; try{ localStorage.removeIt
    Example: databaseURL: "https://your-project-default-rtdb.firebaseio.com"
    ===================================================================== */
 const FIREBASE = {
-  databaseURL: ""   // <-- paste your Realtime Database URL here
+  databaseURL: "https://cescp-afc79-default-rtdb.firebaseio.com/"   // <-- paste your Realtime Database URL here
 };
 const ONLINE = !!(FIREBASE.databaseURL && FIREBASE.databaseURL.trim());
 const DBROOT = (FIREBASE.databaseURL||"").trim().replace(/\/+$/,"");
